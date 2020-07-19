@@ -15,6 +15,7 @@
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "nconf": "^0.10.0",
+    "node-cleanup": "^2.1.2",
     "pug": "2.0.0-beta11"
   }
 }

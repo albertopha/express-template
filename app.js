@@ -1,4 +1,7 @@
 const createError = require('http-errors');
+const compression = require('compression');
+const childProcess = require('child_process');
+const nodeCleanup = require('node-cleanup');
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
@@ -10,9 +13,44 @@ const logger = require('morgan');
 nconf
  .env()
  .argv()
- .file(path.join(__dirname, 'config.json'));
+ .file(path.join(__dirname, 'configs', 'config.json'));
 
 const isDev = nconf.get('NODE_ENV') === 'DEV';
+const isNginx = nconf.get('ENABLE_NGINX') === true;
+
+if (isNginx) {
+ const nginxCustomPath = nconf.get('NGINX_PATH');
+ const nginx = nginxCustomPath || '/usr/local/bin/nginx';
+ const nginxConfPath = nconf.get('NGINX_CONF_PATH') || path.join(__dirname, 'configs', 'nginx.conf');
+
+ const ng = childProcess.spawn(nginx);
+
+ ng.stdout.on('data', (data) => {
+  console.log('stdout: ', data);
+ });
+
+ ng.stderr.on('data', (data) => {
+  console.log('stderr: ', data);
+ });
+
+ ng.on('close', (code) => {
+  console.log('Nginx successfully started');
+ });
+
+ // Clean up nginx on exit
+ nodeCleanup((code, signal) => {
+  if (ng !== null) {
+   childProcess.exec(`${nginx} -s stop`, (error, stdout, stderr) => {
+    if (error) {
+     console.error(`Error stopping nginx: ${error}`);
+     return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
+   });
+  }
+ });
+}
 
 // Customized router
 const indexRouter = require('./routes/index');
