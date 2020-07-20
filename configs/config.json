@@ -2,5 +2,7 @@
  "PORT": 3030,
  "NODE_ENV": "DEV",
  "ENABLE_NGINX": true,
- "session-secret": "albear516"
+ "session-secret": "albear516",
+ "ENABLE_REDIS": true,
+ "REDIS_PORT": 9000
 }

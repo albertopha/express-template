@@ -17,24 +17,42 @@ nconf
 
 const isDev = nconf.get('NODE_ENV') === 'DEV';
 const isNginx = nconf.get('ENABLE_NGINX') === true;
+const isRedis = nconf.get('ENABLE_REDIS') === true;
+let redis = null;
+
+if (isRedis) {
+ const Redis = require('ioredis');
+ const redisPort = nconf.get('REDIS_PORT') || 9000;
+ redis = new Redis(redisPort); 
+ 
+ // Testing redis
+ redis.set('redis:started', true);
+ redis.get('redis:started', (err, result) => {
+  if (err) {
+   console.error('Redis: error = ', err); 
+  } else {
+   console.log('Redis: connected = ', result);
+  }
+ });
+}
 
 if (isNginx) {
  const nginxCustomPath = nconf.get('NGINX_PATH');
  const nginx = nginxCustomPath || '/usr/local/bin/nginx';
  const nginxConfPath = nconf.get('NGINX_CONF_PATH') || path.join(__dirname, 'configs', 'nginx.conf');
 
- const ng = childProcess.spawn(nginx);
+ const ng = childProcess.spawn(nginx, ['-c', nginxConfPath]);
 
  ng.stdout.on('data', (data) => {
   console.log('stdout: ', data);
  });
 
  ng.stderr.on('data', (data) => {
-  console.log('stderr: ', data);
+  console.log('stderr: ', Buffer.from(data).toString('utf8'));
  });
 
  ng.on('close', (code) => {
-  console.log('Nginx successfully started');
+  console.log('close: ', code);
  });
 
  // Clean up nginx on exit
